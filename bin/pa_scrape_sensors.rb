@@ -8,10 +8,10 @@ require "uri"
 
 csv_output_file = ARGV[0]
 
-# doc = Nokogiri::HTML(open('https://www.purpleair.com/sensorlist'))
+doc = Nokogiri::HTML(open('https://www.purpleair.com/sensorlist'))
 
 # for testing
-doc = Nokogiri::HTML(File.read("sensorlist"))
+# doc = Nokogiri::HTML(File.read("sensorlist"))
 
 CSV.open(csv_output_file, "w") do |output_csv|
   doc.css("div#thelist tr").each do |sensor_row|
