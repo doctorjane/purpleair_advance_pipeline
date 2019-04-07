@@ -2,7 +2,6 @@
 puts RUBY_VERSION
 
 require "advance"
-require "clip_to_region"
 
 # up_rgt = [37.82958198283902, -122.34580993652342]
 # bt_lft = [37.79269371351246, -122.27800369262694]
@@ -17,13 +16,8 @@ include Advance
 
 ensure_bin_on_path
 
-def c0(key); $cols.index(key); end
-def c1(key); c0(key) + 1; end
-
-advance :single, :scrape_purple_air, "scrape_sensors.rb sensors.csv"
-$cols = %i{ name lat lng id_1 id_2 }
-required_cols = %i{ name lat lng }
-required_cols_expression = required_cols.map{|col| "!row[#{c0(col)}].nil?"}.join(" && ")
-advance :multi, :remove_bad_records, "csv_select_nh.rb '#{required_cols_expression}' {input_file} > {file_name}"
-advance :single, :clip_to_region_of_interest, "csv_select_nh.rb #{clip_to_region(up_rgt, bt_lft, :lat, :lng)} {input_file} > clipped_sensor_list.csv"
-advance :single, :fetch_sensor_data, "fetch_sensor_data.rb #{$cols.join(",")} {input_file} #{start_date} #{end_date}"
+advance :single, :sensor_list, "sensor_list.rb sensor_list.json"
+advance :single, :get_sensor_list_array, 'cat {input_file} | jq ".results" > sensor_list_array.json'
+advance :single, :remove_records_with_no_location, 'cat {input_file} | jq "[.[] | select(.Lat != null)]" > clean_sensor_list.json'
+advance :single, :clip_to_region_of_interest, "cat {input_file} | jq '[.[] | select(.Lat >= #{bt_lft[0]} and .Lat <= #{up_rgt[0]} and .Lon >= #{bt_lft[1]} and .Lon <= #{up_rgt[1]})]' > clipped_sensor_list.json"
+advance :single, :fetch_sensor_data, "fetch_sensor_data.rb {input_file} #{start_date} #{end_date}"
